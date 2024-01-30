@@ -1,1 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="keywords" content="genealogy, data model">
+<title>GenealogyLite - an implementation</title>
 
+<style>
+body{
+margin:40px auto;
+max-width:880px;
+line-height:1.4;
+padding:0px 10px;
+font-family: sans-serif;
+font-size:18px;
+background-color:GhostWhite}
+table, th, td{border: 1px solid darkSlateGray; border-collapse: collapse}
+th, td{padding: 4px}
+pre{font-size:14px;color:darkSlateGray;font-variant:mono}
+dt{font-size:16px;font-variant:mono}
+dd{font-size:16px;color:SaddleBrown}
+mnm{font-weight:bold;font-variant:small-caps}
+</style>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body bgcolor="#B0B098" text="black" link="navy" vlink="darkslateblue" alink="tan">
+
+<center>
+<img src="petarZrinski.png" alt="Petar Zrinski">
+<h2>Zrinski: an Implementation of <mnm>GenealogyLite</mnm> Data Model</h2>
+</center>
+<hr>
+
+<blockquote>
+<p>This document is a "User guide" for a long-term archive of genealogy data based on <mnm>GenealogyLite</mnm> data model. The principal objective of this implementation is that of <b>"future‑proofing" of digital content</b>. In addition, the implementation fully respects its users' data ownership, control and privacy. The first objective is achieved by using file formats and structure most likely to survive the passage of time, the second by being completely "network-agnostic".</p>
+
+<p>As depicted below, the archive consists of two main segments: the <b>Long-Term Archive</b> proper, consisting of database tables source files, and an <b>SQLite database</b>. The former is likely <b>capable of surviving a long period (perhaps many decades) of dormancy or neglect</b>. The chances that the latter - even if it physically survives - will be usable decreases with the passage of time. However, the transformation of archived source data into a structured database (using whatever software tools are available when the archive is reactivated) should be possible with a minimum of skill and effort.</p>
+</blockquote>
+
+<center>
+<img src="components.png"><br>
+</center>
+
+<small>
+
+<p><b>Prerequisites:</b> Both the general familiarity with the art of data modelling as well as the understanding of <mnm>GenealogyLite</mnm> data model is required. If any part of this guide appears to be deficient or incomplete, please consult the relevant section in the data model document. For this - and multiple other items in this guide, too numerous to mention individually - peruse the "Useful Links" section at the bottom of this document.</p>
+
+<p>In addition, a moderate level of personal computer user skills - but no programming knowledge - is assumed on the part of the reader. For the preparation of source data this includes the use of generic text editors and "spreadsheet" programs. Creation of the database will require the use of shell ("command line", "terminal"...) programs on the operating system of user's preference. Once the database has been built, the interaction with it will be much easier for those with some previous experience with the SQL "database language".
+
+<p><b>Name:</b>This guide uses as an example the genealogy of the <b>House of Zrinski</b> (or <b>Zrínyi</b>), a Croatian-Hungarian noble family influential during the period of European history marked by the wars with Ottoman empire. The family name has been appropriated as the moniker of the implementation described here.</p>
+
+(January, 2024)
+</small>
+
+<hr>
+
+<h3>Database tables</h3>
+
+<p><mnm>GenealogyLite</mnm> data model consists of only four tables: man, woman, marriageLegal and marriageCommon. The source information equivalent of the four database tables is maintained in four comma-separated ("csv") UTF-8 text files, maintained via almost any "spreadsheet" computer program capable of creating output .csv files. </p>
+
+<p>One line of .csv text file corresponds to one database table row. With a single exception (see below) one value (comma separated) in the .csv filr line corresponds to one column in the datacase table.</p>
+
+<p>The exception to one-to-one value/column ralationship are the dates (birth, death, start and end of relationship). The source data requires the dates to be entered as a "aYYYYmMMdDD" (when the date of an event is known) or "aYYYY" (when only a year is known) character string. In the string(s) 'a', 'm' and 'd' are (lowercase) literal "tags" that introduce the 4-digit year (YYYY) or 2-digit (MM and DD) month/day integer number. (a, m and d for Latin "Annus", "Mensis" and "Dies", respectively). This somewhat unusual format for year or date string representation preempts a rather common (and nonstandard!) date manipulation rules frequently implemented (and usually difficult to de-activate!) in different spreadsheet programs. Note also that <mnm>GenealogyLite</mnm> model offers the ability to enter estimated years (or - perhaps less likely - dates).</p>
+
+<p>Examples of four tables (man, woman, marriageCommon and marriageLegal) in the .csv form of the example project are available in the repository listed at the bottom of the document. In addition of the four tables, there is an .html file with the text (and possibly the images, see exampla). The purpose of the file is to provide the repository for additional information which is not part of the <mnm>GenealogyLite</mnm> data model. This - in addition to the neglected art of hand-stitching .html fies - provides for a great flexibility in adding information to the archive in a file just as "future‑proof" as are the UTF-8 .csv files. Due to its simplicity such file can be created and maintained in ant text editor using the posted example as a template.</p>
+
+<p>Those five files <i>are</i> the core of the long-term archive of any genealogy project. Any maintenance (changes, corrections, additions...) of the archive must be done <b>only by manipulating those .csv and .html text files</b>.</b></p>
+
+<h3><big>.csv</big> "table translation" and SQLite database creation.</h3>
+
+Four C language programs are used to "translate" the four archive .cvs files into a form that can be used to "import" data into an SQLite database. They preform only two very simple interventions:
+<ul>
+<li>Comma (',' separator - commonly used by spreadsheet programs) is replaced by the "vertical bar" character ('|' separator) as expected by the database import program.</li><br>
+<li>Long-term archive date string (see above) is replaced by the two integers as required by the <mnm>GenealogyLite</mnm> model.</li>
+</ul>
+
+<p>Since the bar character is used as a separator, the translated table files are given .bsv extension (correspondingly to spreadsheet program generated .csv extension of the archive table files).</p>
+
+<p>Both the source code and the three OS-es (Linux, MS Windows and MacOSX) executables are provided in the repository. They have no dependencies and can be compiled on any other platform that supports the execution of "command-line" programs (or "shell") programs (for instance, Termux on Android). They are "text filter" programs that read the input table from standard input, and write output table on standard output; therefore redirection should be used when the input and output is stored in a file. For example:</p
+
+<code>glteTtWoman < zrinskiWoman.csv > zrinskiWoman.bsv</code>
+
+<p>The source code of the table translation programs should be included on the long-term archival (most likely a CD/DVD) medium. The code is extremely compact, and it can be easily modified in order to meet the import format of a different relational table database package when the SQLite application is no longer available.</p>
+
+The transformation performed by those programs may could alse be achieved by a spreadsheet program that allows the user to choose "separator character" and (if the volume of data is modest) by manual adjustment of date strings.</p>
+
+<h3>Database creation and table data import</h3>
+
+<p>That the SQLite (version 3.x) is installed can be confirmed by the following command:</p>
+<code>sqlite3 -version</code>
+
+<p>The following sequence of three commands will create an empty database and load the four tables from the .bsv files:</p>
+<code>rm zrinski.db</code><br>
+<code>sqlite3 zrinski.db < glteCreate.sql</code><br>
+<code>sqlite3 zrinski.db < glteLoadZrinski.sql</code><br>
+
+<p>The first (operating system dependent) of the three commands ensures there is no databse file present when the second (database creation) operation is executed. The third command reads the tables and uses SQLite .import function to populate the database. The two .sql files in the above are "sql scripts" (see below).</p>
+
+<h3>Database queries</h3>
+
+<center>
+<img src="underConstruction.gif"><br>
+(this section is under development)
+</center>
+
+<p>SQLite genealogy database can now queried using using the full power of SQL database language, either directly, or via bespoke programs created using a programming language such as C or Python. A few SQL script examples are provided in the repository. These are executed using the SQLite command-line program, similar to database create and import scripts above. For instance, to list the individual's id-s sorted by last and first names, one would execute:</p>
+
+
+<h3>Useful Links</h3>
+
+<center>
+<table>
+<tr>
+<td><b><mnm>GenealogyLite</mnm></b> (data model)</td>
+<td>
+<a href="https://genealogyLite.neocities.org/" TARGET="genealogyLite">
+<b><code>https://genealogyLite.neocities.org/</code></b></a>
+</td>
+</tr>
+
+<tr>
+<td>Zrinski</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Zrinski_family" TARGET="Wiki">
+<code>https://en.wikipedia.org/wiki/Zrinski_family</code></a><br>
+<a href="https://en.wikipedia.org/wiki/Zrinski_family_tree" TARGET="Wiki">
+<code>https://en.wikipedia.org/wiki/Zrinski_family_tree</code></a>
+</td>
+</tr>
+
+<tr>
+<td>Comma-sepatared values</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Comma-separated_values" TARGET="Wiki">
+<code>https://en.wikipedia.org/wiki/Comma-separated_values</code></a>
+</td>
+</tr>
+
+<tr>
+<td>Spreadsheet programs</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Spreadsheet" TARGET="Wiki">
+<code>https://en.wikipedia.org/wiki/Spreadsheet</code></a>
+</td>
+</tr>
+
+<tr>
+<td>SQLite (database program):</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/Spreadsheet" TARGET="Wiki">
+<code>https://en.wikipedia.org/wiki/SQLite</code></a><br>
+<a href="https://sqlite.org/index.html" TARGET="sql">
+<code>https://sqlite.org/index.html</code></a>
+</a></td>
+
+<tr>
+<td>SQL (database language):</td>
+<td>
+<a href="https://en.wikipedia.org/wiki/SQL" TARGET="Wiki">
+<code>https://en.wikipedia.org/wiki/SQL</code></a>
+</td>
+</tr>
+
+<tr>
+<td>Sample data:</td>
+<td>
+<a href="https://binrepa.000webhostapp.com/glte/data/" TARGET="binrepa">
+<code>https://binrepa.000webhostapp.com/glte/data/</code></a>
+</td>
+</tr>
+
+<tr>
+<td>Source code:</td>
+<td>
+<a href="https://binrepa.000webhostapp.com/glte/cSource/" TARGET="binrepa">
+<code>https://binrepa.000webhostapp.com/glte/cSource/</code></a>
+</td>
+</tr>
+
+<tr>
+<td>Executable programs:</td>
+<td>
+<a href="https://binrepa.000webhostapp.com/glte/linux/" TARGET="binrepa">
+<code>https://binrepa.000webhostapp.com/glte/linux/</code></a><br>
+<a href="https://binrepa.000webhostapp.com/glte/macOS/" TARGET="binrepa">
+<code>https://binrepa.000webhostapp.com/glte/macOS/</code></a><br>
+<a href="https://binrepa.000webhostapp.com/glte/msWindows/" TARGET="binrepa">
+<code>https://binrepa.000webhostapp.com/glte/msWindows/<code></a>
+</td>
+</tr>
+
+<tr>
+<td>sample SQL scripts:</td>
+<td>
+<a href="https://binrepa.000webhostapp.com/glte/sql/" TARGET="binrepa">
+<code>https://binrepa.000webhostapp.com/glte/sql/<code></a>
+</td>
+</tr>
+
+</table>
+</center>
+<br>
+<hr>
+
+<center>
+<p><small>
+The content is published under
+<a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.en" target="_crecom">
+Creative Commons ByNcNd </a>license.</small></p>
+
+</center>
+</body>
+</html>
