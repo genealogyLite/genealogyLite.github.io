@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="keywords" content="genealogy, data model">
+<title>GenealogyLite</title>
+
+<style>
+body{
+margin:40px auto;
+max-width:880px;
+line-height:1.4;
+padding:0px 10px;
+font-family: sans-serif;
+font-size:18px;
+background-color:GhostWhite}
+pre{font-size:14px;color:darkSlateGray;font-variant:mono}
+dt{font-size:16px;font-variant:mono}
+dd{font-size:16px;color:SaddleBrown}
+mnm{font-weight:bold;font-variant:small-caps}
+</style>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body bgcolor="#B0B098" text="black" link="navy" vlink="darkslateblue" alink="tan">
+<hr>
+<center>
+<h2><mnm>GenealogyLite</mnm></h2>
+<big>A Minimalist Genealogy Data Model</big><br>
+(January, 2024)
+</center>
+<hr>
+
+<p>
+There are a large number of Internet‑published genealogy software applications. All of these, however, share at least some of the following undesirable characteristics:
+<ul>
+<li>They hardly ever properly document the underlying data model; it is something that the user is left to do by reverse‑engineering functional specifications and the behaviour of the system. Even if they do, the data model is typically given only in the form of the "file format specification", without explicit definition of the <i>real‑life objects</i> that form the rows and columns that their tables are composed of. (i.e., their "semantical data model" is often not much more than what is implied by the table name and by the table/column name and data type).<br>
+<li>They frequently include items that are only tangentially related to the genealogy and, at the same time, are much better suited for storage and presentation using specialized software tools (such as foto‑album composers/organizers, literary text authoring and publication tools, etc.,,).<br>
+<li>They include items and relationships that attempt to capture level of detail of no interest to the overwhelming majority of system users (geography beyond simple place-names, individual's business activities, formal education levels, medical conditions, etc.).<br>
+</ul>
+</p>
+<p><b>A well-defined data model is a prerequisite for extracting the information from any application once it becomes either unattainable or sub-optimal.</b></p>
+
+<p>What follows is a definition of a minimalist genealogy data model. It makes no assumption about the DB software tool it might be implemented with. If the genealogy can be divided  into "biological" and the "historical" one, on the biological side it only captures the knowledge about individuals, their relationships and children that are the product of such relationships. On the historical side it is restricted to the place names and start and end dates of individuals and their relationships.</p>
+
+<p>The central problem of any computer system that collects and organizes information about persons is the <b>unambiguous identification of individuals. This model assumes this will be done externally to it, by a unique integer number assigned to each individual by the user or administrator</b> of a population (family, clan, tribe, house...) that is the subject of an operational instance of the system based on this model. If the integration of several such instances ("segments") into a larger collection is contemplated, a lot of integration time and effort can be saved by a-priory dividing that function to a number of "segment‑administrators" who will use unique prefixes to the numbers assigned in their "segment‑collections".</p>
+
+<p>Individuals are subject to categorical classification by gender (i.e., they are either female or male). Each individual can have multiple children, each child has one parent of each gender. Either of the two parents of an individual may or may not be known.</p>
+
+<p>Only the relationships between individuals that are capable of producing children are included in the model. Like individuals, relationships are of two types, (legal and common) and, again like individuals, they are subject to categorical classification. Relationships between individuals may overlap in time, but can only exist between two individuals of different genders. (The terms "gender" and "sex" are assumed to be interchangeable).</p>
+
+<p><b>Like any logical and semantical data model, this one is only an approximation of reality</b>. System designers and users that desire or need to model the realty in more detail than this model provides have an option to store information about additional biological phenomena (e.g., polygyny and polyandry, in‑vitro insemination, gestational surrogacy and adoptions, race, gender fluctuations, same‑sex unions, cryo‑preservation,  parthenogenesis...) or historical facts (citizenship, ethnicity and religious affiliation and conversions, participation in wars and rebellions, migrations...) as a narrative in the text and notes provided by a system built using this model, or <i>if the relational algebra productions over the canonical representation of such phenomena is mandatory</i> find a system built on a data model that more closely matches their reality.</p>
+
+<p>A database built using this model might be updated and queried by the user either employing a formal relational table access software (such as SQL), or, preferably, the interaction with the database may be via a text or GUI genealogy‑domain‑specific application programs.</p>
+
+<h4>First, the logical data model in form of a diagram:</h4>
+
+<center>
+<img src="genealogyLite.png"><br><small>(Prepared using www.dbdesigner.net)</small>
+</center>
+
+<h4>The same model as a set of four "generic" table definition statements:</h4>
+
+<pre>
+woman {
+   id integer pk unique
+   mother integer null > woman.id
+   father integer null > man.id
+   name string null
+   surname string null
+   maidenSurname string null
+   pEst integer null
+   birthYear integer null
+   birthYearDay integer null
+   birthPlace string null
+   deathYear integer null
+   deathYearDay integer null
+   deathPlace string null
+   occupation string null
+   note text null
+   infoUrl text null
+   }
+
+man {
+id integer pk unique
+   mother integer null > woman.id
+   father integer null > man.id
+   name string null
+   surname string null
+   pEst integer null
+   birthYear integer null
+   birthYearDay integer null
+   bitrhPlace string null
+   deathYear integer null
+   deathYearDay integer null
+   deathPlace string null
+   occupation string null
+   note text null
+   infoUrl text null
+   }
+
+marriageLegal {
+   wife integer null > woman.id
+   husband integer null > man.id
+   pEst integer null
+   startYear integer null
+   startYearDay integer null
+   startPlace string null
+   endYear integer null
+   endYearDay integer null
+   note text null
+   infoUrl text null
+   }
+
+marriageCommon {
+   wife integer null > woman.id
+   husband integer null > man.id
+   pEst integer null
+   startYear integer null
+   startYearDay integer null
+   endYear integer null
+   endYearDay integer null
+   note text null
+   infoUrl text null
+   }
+</pre>
+
+<h4>Semantical data model:</h4>
+
+<p><u>Tables/Rows</u></p>
+<dl>
+<dt>woman</dt>
+<dd>An instance of an individual of female (XX chromosome) gender. One individual must not be included more than once in either of the two ([woman]/[man]) tables.</dd>
+<dt>man</dt>
+<dd>An instance of an individual of male (XY chromosome) gender. One individual must not be included more than once in either of the two ([woman]/[man]) tables.</dd>
+<dt>marriageLegal</dt>
+<dd>An instance of a state- or church‑sanctioned union of two individuals, where at least one of them is present in the relevant ([woman]/[man]) table. Any column in one row of the table can be NULL, but at least one column of any row must be NON-NULL.</dd>
+<dt>marriageCommon</dt>
+<dd>Privately instantiated/executed union of two individuals, in everything else the same as the previous table.</dd>
+</dl>
+
+<p><u>Columns</u></p>
+<dl>
+<dt>woman.id, man.id</dt>
+<dd>Positive non-0 integer less 2147483647 uniquely identifying a row of either of the two tables. (i.e., the number is <i>unique within a table</i>,  but <b>cf. "Interoperability..."</b> below). The implementation should not make any assumption about the number: it is assigned to individuals by the user/administrator, and not by the system.</dd>
+<dt>women.mother, man.mother</dt>
+<dd>Table [women] primary key index, equal to woman.id of the mother. NULL if unknown.</dd>
+<dt>women.father, man.father</dt>
+<dd>Table [man] primary key index, equal to man.id of the father. NULL if unknown.</dd>
+<dt>women.name, women.maidenSurname, man.name, man.surname</dt>
+<dd>Strings, NULL if unknown (cf. Notes/Names, below). Individual's name and surname.</dd>
+<dt>woman.maidenSurname</dt>
+<dd>String, NULL if unknown and/or if woman did not change her name after marriage (cf. Notes/Names, below).</dd>
+<dt>woman.pEst, man.pEst, marriageLegal.pEst, marriageCommon.pEst</dt>
+<dd>Integer, (0|1|2|3) - time period estimate indicator (cf. Notes/Period Estimate, below).
+<dt>woman.birthYear, woman.deathYear, men.birthYear, men.deathYear</dt>
+<dd>Integer, year of the respective event. If the year is 1582 or earlier Julian year, otherwise Gregorian. NULL if unknown, in which case the corresponding [...YearDay] must also be NULL.</dd>
+<dt>woman.birthYearDay, woman.deathYearDay, men.birthYearDay, men.deathYearDay</dt>
+<dd>Integer, Day-ofYear. If not NULL, the corresponding table row/event [...Year] item must also be not NULL., See also below, under Notes, Years and year day numbers.</dd>
+<dt>woman.birthPlace, women.deathPlace, man.birthPlace, man.deathPlace</dt>
+<dd>Variable length string, NULL if unknown (cf. Notes/Name, below). Geographical name of individual's place of birth or death.</dd>
+<dt>woman.occupation, man.occupation</dt>
+<dd>Variable length string, NULL if unknown (cf. Notes/Name, below). Individual's occupation designation.</dd>
+<dt>woman.note, man.note, marriageLegal.note, marriageCommon.note</dt>
+<dd>Text, short note on woman, man or union details.</dd>
+<dt>woman.infoUrl, man.infoUrl, marriageLegal.infoUrl, marriageCommon.infoUrl</dt>
+<dd>Text, references to external information about an individual or a  relationships (cf. URL's...,  below).</dd>
+<dt>marriageLegal.wife, marriageCommon.wife</dt>
+<dd>Table [women] entry index equal to union's female participant. NULL if unknown.</dd>
+<dt>marriageLegal.husband, marriageCommon.husband</dt>
+<dd>Table [man] entry index equal to union's male participant. NULL if unknown.</dd>
+<dt>marriageLegal.startYear, marriageCommon.startYear, marriageLegal.endYear, marriageCommon.endYear</dt>
+<dd>Integer, year of the respective event, semantics the same as woman.birthYear ... above. NULL if unknown.</dd>
+<dt>marriageLegal.startYearDay, marriageCommon.startYearDay, marriageLegal.endYearDay, marriageCommon.endYearDay</dt>
+<dd>Integer, semantics the same as woman.birthYearDay ... above. NULL if unknown.</dd>
+<dt>marriageLegal.startPlace</dt>
+<dd>Variable length string, NULL if unknown (cf. Notes/Name, below). Gegraphical name of the place where marriage was initiated. NULL if unknown.</dd>
+
+</dl>
+
+<p><u>Notes:</u></p>
+
+<p><b>Name</b>: All individuals' names/surnames/maidenSurnames, place-names and occupational designations are variable length UTF-8 character strings of the maximum length of 32 characters. If table entry selections based on the equality of place-names or occupational designations are to be performed, an implementation might need to expand the model with tables of canonical versions of place‑names and occupations. The software based on the model can treat nonconforming strings either as input errors, or silently adjust/truncate the input string to conform to the definition.</p>
+
+<p>Name (and surname) table entries are the name that an individual was commonly known by throughout most of her or his life.</p>
+
+<p><b>Period Estimate</b>: Birth and death years as well as the start and end years of a marriage can often be only estimated. This is indicated with [.pEst] (abbreviation for "period estimated") indicator as follows:<br>
+	&nbsp;&nbsp;&nbsp;0: Both start and end year are accurate values<br>
+	&nbsp;&nbsp;&nbsp;1: Start year of the period is an estimate<br>
+	&nbsp;&nbsp;&nbsp;2: End year of the period is an estimate<br>
+	&nbsp;&nbsp;&nbsp;3: Both start and end years are estimates<br></p>
+
+<p><b>Years and year day numbers</b>: The model provides for a rather simplistic "two-level" calendar arithmetic granularity: a year and a day. The [...Year] items are either Julian or Gregorian, as defined above. Year day numbers [...YearDay] is the "1-relative" (i.e., January 1 is year-day 1) ordinal day-of-year number. The leap year is taken into account assuming the year is leap according to "proleptic" Julian calendar rules if the year is 1582 and earlier, Gregorian otherwise. In cases where the day numbers <i>are</i> provided, they are assumed to be in an undefined time zone, and it is further assumed that calendar arithmetic maximum error introduced by the lack of time zone information of ±(&lt one day) is of no consequence in an applications based on this model.</p>
+
+<p><b>URL's of external information repositories</b>: Implementation specific references to local or network resident collection of documents and/or images providing additional (typically historical) information about the individual or relationship. Canonical content consists of comma separated, "point brackets" (&lt;, &gt;) enclosed URL's of document(s), organized collection of text and/or images with additional information about the individual or relationship. URL's can be either local of network resident, and the location specification may be either relative to the location of the table or absolute. Following each URL there may be a string providing the credentials required to access the resource (web-page, document collection or images). URL sections of text must be "ascii‑restricted UTF-8" (i.e., Unicode characters with code-points up to and including U+007f), while the text outside of brackets can include any UTF-8 character. The maximum string length is 256 characters.</p>
+
+<p><b>Interoperability with "person‑table" models</b>: Significant majority of genealogical data models in current use store both genders in a single table, commonly named "person" or "individual" and use "instance type indicator" to determine the gender of the person represented by a table row. If the exchange of data with such systems is anticipated, the application based on this model should impose a rule that makes woman.id and man.id integer sets non‑intersecting; the canonical method to achieve this is to restrict <b>woman.id to even</b> and <b>man.id to odd</b> numbers.</p>
+<hr>
+
+<p>The content is published in order to invite comments and collaboration on reference implementation using SqLite in Python and/or C language. Please contact the author at:</p>
+
+<center>
+<img src="emailAddress.png"></p>
+</center>
+
+<center>
+<p><small>
+The content is published under
+<a href="https://creativecommons.org/licenses/by-nc-nd/4.0/deed.en" target="_crecom">
+Creative Commons ByNcNd </a>license.</small></p>
+
+</center>
+</body>
+</html>
